@@ -1,5 +1,5 @@
 const util = require("util");
-const mysql = require("mysql2");
+const mysql = require("mysql2/promise");
 const config = require("../config/dbConfig");
 
 // console.log({
@@ -10,7 +10,6 @@ const config = require("../config/dbConfig");
 //   database: config.DATABASE,
 // });
 
-
 // Create a connection pool using the provided configuration
 const pool = mysql.createPool({
   host: config.HOST,
@@ -18,34 +17,27 @@ const pool = mysql.createPool({
   port: config.DB_PORT,
   password: config.PASSWORD,
   database: config.DATABASE,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
-pool.getConnection((err, connection) => {
-  if (err) {
-    console.log("db con err");
-    console.log(err);
-    if (err.code === "PROTOCOL_CONNECTION_LOST") {
-      console.error("Database connection was closed.");
-    }
-    if (err.code === "ER_CON_COUNT_ERROR") {
-      console.error("Database has too many connections.");
-    }
-    if (err.code === "ECONNREFUSED") {
-      console.error("Database connection was refused.");
-    }
-  }
+const testConnection = async () => {
+  try {
+    // Get a connection from the pool
+    const connection = await pool.getConnection();
+    console.log("DB connected successfully");
+    // Test with a simple query to ensure the connection works
+    await connection.query("SELECT 1");
+    console.log("Test query successful");
 
-  if (connection) {
-    console.log("db connected");
+    // Release the connection back to the pool
     connection.release();
-  } else {
-    console.log("db disconnected");
+  } catch (err) {
+    console.log("Error connecting to the database: ", err);
   }
+};
 
-  return;
-});
-
-// Promisify for Node.js async/await.
-pool.query = util.promisify(pool.query);
+testConnection();
 
 module.exports = pool;

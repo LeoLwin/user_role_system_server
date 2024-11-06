@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const StatusCode = require("../helper/status_code_helper");
 const Auth_helper = require("../helper/auth_helper");
 
-router.post("/login", async (req, res) => {
+router.post("/login",  async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await Users.searchMail(email);
@@ -13,11 +13,6 @@ router.post("/login", async (req, res) => {
     if (user.code != "200") {
       return res.json(user);
     }
-
-    console.log(
-      "Password : ",
-      await bcrypt.compareSync(password, user.data.password)
-    );
 
     if (await bcrypt.compareSync(password, user.data.password)) {
       const getToken = await Auth_helper.getToken(
@@ -28,11 +23,7 @@ router.post("/login", async (req, res) => {
       console.log("getToken : ", getToken);
       return res.json(getToken);
     }
-    return res.json("HelliI");
-
-    // if (await bcrypt.compareSync(password, user.password)) {
-
-    // }
+    return res.json(StatusCode.ERROR("Password is incorrect"));
   } catch (error) {
     console.log(error);
     return res.json(StatusCode.ERROR(error.message));
